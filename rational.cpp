@@ -1,185 +1,226 @@
-#pragma once
+#include <iostream>
 #include "rational.h"
 
-std::ostream& operator<<(std::ostream& out, const Rational& num) {
-    out << num.Numerator;
-    if (num.Numerator != 0 && num.Denominator != 1) {
-        out << "/" << num.Denominator;
-    }
-    return out;
+std::ostream& operator<<(std::ostream& out, const Rational& number) {
+  out << number.numerator_;
+  if (number.denominator_ != 1) {
+    out << "/" << number.denominator_;
+  }
+  return out;
 }
 
-std::istream& operator>>(std::istream& in, Rational& num) {
-    char separator;
-    in >> num.Numerator >> separator >> num.Denominator;
-    if (num.Denominator < 0) {
-        num.Numerator = -num.Numerator;
-        num.Denominator = -num.Denominator;
-    }
-    num.reduce();
-    return in;
+std::istream& operator>>(std::istream& in, Rational& number) {
+  char separator;
+  in >> number.numerator_ >> separator >> number.denominator_;
+  number.Reduce();
+  return in;
 }
 
-Rational::Rational(): Numerator(0), Denominator(1) {}
-
-Rational::Rational(const int32_t value) : Numerator(value), Denominator(1) {}
-
-Rational::Rational(const int32_t Numerator, const int32_t Denominator_) : Numerator(Numerator) {
-    if (Denominator_ == 0)
-       /* throw RationalDivisionByZero();*/
-
-    Denominator = Denominator_;
-    if (this->Denominator < 0) {
-        this->Numerator = -this->Numerator;
-        this->Denominator = -this->Denominator;
-    }
-    reduce();
+Rational::Rational() : numerator_(0), denominator_(1) {
 }
 
-void Rational::SetNumerator(int32_t Numerator_) {
-    Numerator = Numerator_;
-    reduce();
+Rational::Rational(int value) : numerator_(value), denominator_(1) {
 }
 
-int Rational::GetNumerator() const { 
-    return Numerator; 
+Rational::Rational(int numerator, int denominator) : numerator_(numerator) {
+  if (denominator == 0) {
+    throw RationalDivisionByZero{};
+  }
+  denominator_ = denominator;
+  Reduce();
 }
 
-void Rational::SetDenominator(int32_t Denominator_) {
-    if (Denominator_ == 0) {
-        throw RationalDivisionByZero();
-    }
-    else {
-        Denominator = Denominator_;
-        reduce();
-    }
+void Rational::SetNumerator(int numerator) {
+  numerator_ = numerator;
+  Reduce();
 }
 
-int Rational::GetDenominator() const { 
-    return Denominator; 
+int Rational::GetNumerator() const {
+  return numerator_;
 }
 
-Rational Rational::operator=(const int32_t value) {
-    Numerator = value;
-    Denominator = 1;
-    return *this;
+void Rational::SetDenominator(int denominator) {
+  if (denominator == 0) {
+    throw RationalDivisionByZero{};
+  }
+  denominator_ = denominator;
+  Reduce();
+}
+
+int Rational::GetDenominator() const {
+  return denominator_;
+}
+
+Rational Rational::operator=(int value) {
+  numerator_ = value;
+  denominator_ = 1;
+  return *this;
 }
 
 Rational Rational::operator=(const Rational& other) {
-    Numerator = other.Numerator;
-    Denominator = other.Denominator;
-    return *this;
+  numerator_ = other.numerator_;
+  denominator_ = other.denominator_;
+  return *this;
 }
 
-Rational Rational::operator+(const Rational& other) {
-    return Rational{ Numerator * other.Denominator + Denominator * other.Numerator, Denominator * other.Denominator };
+Rational Rational::operator+(const Rational& other) const {
+  int num = numerator_ * other.denominator_ + denominator_ * other.numerator_;
+  int den = denominator_ * other.denominator_;
+  return Rational{num, den};
 }
 
 Rational Rational::operator+=(const Rational& other) {
-    return *this + other;
+  return *this + other;
 }
 
-Rational Rational::operator-(const Rational& other) {
-    return -other + *this;
+Rational Rational::operator-(const Rational& other) const {
+  return -other + *this;
 }
 
 Rational Rational::operator-=(const Rational& other) {
-    return *this - other;
+  return *this - other;
 }
 
-Rational Rational::operator*(const Rational& other) {
-    return Rational(Numerator * other.Numerator, Denominator * other.Denominator);
+Rational Rational::operator*(const Rational& other) const {
+  return Rational(numerator_ * other.numerator_, denominator_ * other.denominator_);
 }
 
 Rational Rational::operator*=(const Rational& other) {
-    return *this * other;
+  return *this * other;
 }
 
-Rational Rational::operator/(const Rational& other) {
-    *this = Rational(Numerator * other.Denominator, Denominator * other.Numerator);
-    return *this;
-
+Rational Rational::operator/(const Rational& other) const {
+  return Rational(numerator_ * other.denominator_, denominator_ * other.numerator_);
 }
 
 Rational Rational::operator/=(const Rational& other) {
-    return *this / other;
+  return *this / other;
 }
 
 Rational Rational::operator-() const {
-    return Rational(-Numerator, Denominator);
+  return Rational(-numerator_, denominator_);
+}
+
+Rational Rational::operator+() const {
+  return Rational(numerator_, denominator_);
+}
+
+Rational operator+(const int& integer, const Rational& rational) {
+  auto first = Rational(integer);
+  return first + rational;
+}
+
+Rational operator-(const int& integer, const Rational& rational) {
+  auto first = Rational(integer);
+  return first - rational;
+}
+
+Rational operator*(const int& integer, const Rational& rational) {
+  auto first = Rational(integer);
+  return first * rational;
+}
+
+Rational operator/(const int& integer, const Rational& rational) {
+  auto first = Rational(integer);
+  return first / rational;
 }
 
 Rational Rational::operator++() {
-    *this = *this + 1;
-    return *this;
+  *this = *this + 1;
+  return *this;
 }
 
 Rational Rational::operator++(int) {
-    Rational before = *this;
-    *this = *this + 1;
-    return before;
+  Rational before = *this;
+  *this = *this + 1;
+  return before;
 }
 
 Rational Rational::operator--() {
-    *this = *this - 1;
-    return *this;
+  *this = *this - 1;
+  return *this;
 }
 
 Rational Rational::operator--(int) {
-    Rational before = *this;
-    *this = *this - 1;
-    return before;
+  Rational before = *this;
+  *this = *this - 1;
+  return before;
 }
 
 bool Rational::operator<(const Rational& other) const {
-    return Numerator * other.Denominator < Denominator* other.Numerator;
+  return numerator_ * other.denominator_ < denominator_ * other.numerator_;
 }
 
 bool Rational::operator>(const Rational& other) const {
-    return other < *this;
+  return other < *this;
 }
 
 bool Rational::operator>=(const Rational& other) const {
-    return !(*this < other);
+  return !(*this < other);
 }
 
 bool Rational::operator<=(const Rational& other) const {
-    return !(*this > other);
+  return !(*this > other);
 }
 
 bool Rational::operator==(const Rational& other) const {
-    return Numerator == other.Numerator && Denominator == other.Denominator;
+  return numerator_ == other.numerator_ && denominator_ == other.denominator_;
 }
 
 bool Rational::operator!=(const Rational& other) const {
-    return !(*this == other);
+  return !(*this == other);
 }
 
-void Rational::reduce() { 
-    auto nod = gcd(Numerator < 0 ? -Numerator : Numerator, Denominator);
-    if (nod != 1) {
-        Numerator /= nod;
-        Denominator /= nod;
-    }
-    if (Numerator < 0 && Denominator < 0) {
-        Numerator = -Numerator;
-        Denominator = -Denominator;
-    }
-    else if (Denominator < 0) {
-        Numerator = -Numerator;
-        Denominator = -Denominator;
-    }
+bool operator==(const int& integer, const Rational& rational) {
+  auto first = Rational(integer);
+  return first == rational;
 }
 
-int Rational::gcd(int32_t a, int32_t b) const { 
-    while (a) {
-        auto t = b % a;
-        b = a;
-        a = t;
-    }
-    return b;
+bool operator!=(const int& integer, const Rational& rational) {
+  auto first = Rational(integer);
+  return first != rational;
 }
 
-int main() {
-    Rational x(10, 0);
+bool operator<(const int& integer, const Rational& rational) {
+  auto first = Rational(integer);
+  return first < rational;
+}
+
+bool operator>(const int& integer, const Rational& rational) {
+  auto first = Rational(integer);
+  return first > rational;
+}
+
+bool operator<=(const int& integer, const Rational& rational) {
+  auto first = Rational(integer);
+  return first <= rational;
+}
+
+bool operator>=(const int& integer, const Rational& rational) {
+  auto first = Rational(integer);
+  return first >= rational;
+}
+
+void Rational::Reduce() {
+  auto nod = Gcd(numerator_ < 0 ? -numerator_ : numerator_, denominator_);
+  if (nod != 1) {
+    numerator_ /= nod;
+    denominator_ /= nod;
+  }
+  if (denominator_ < 0 && numerator_ < 0) {
+    numerator_ = -numerator_;
+    denominator_ = -denominator_;
+  } else if (denominator_ < 0) {
+    numerator_ = -numerator_;
+    denominator_ = -denominator_;
+  }
+}
+
+int Rational::Gcd(int a, int b) const {
+  while (a) {
+    auto t = b % a;
+    b = a;
+    a = t;
+  }
+  return b;
 }
